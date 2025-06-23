@@ -4,7 +4,7 @@
   "description": "Proxy server for file upload and PDF conversion",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.7.2",
