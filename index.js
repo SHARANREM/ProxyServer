@@ -1,36 +1,48 @@
-import express from 'express';
-import cors from 'cors';
-import multer from 'multer';
-import axios from 'axios';
-import FormData from 'form-data';
-import * as dotenv from 'dotenv';
-dotenv.config();
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const axios = require('axios');
+require('dotenv').config();
 
 const app = express();
+const port = process.env.PORT || 3000;
+
 app.use(cors());
+app.use(express.json());
 
 const upload = multer();
 
 app.post('/convert-to-pdf', upload.single('file'), async (req, res) => {
   try {
-    const file = req.file;
+    const fileBuffer = req.file.buffer;
+    const fileName = req.file.originalname;
+    const mimeType = req.file.mimetype;
 
     const formData = new FormData();
-    formData.append('file', file.buffer, file.originalname);
-
-    const response = await axios.post(`${process.env.RENDER_URL}/convert-to-pdf`, formData, {
-      headers: formData.getHeaders(),
-      responseType: 'stream',
+    formData.append('file', fileBuffer, {
+      filename: fileName,
+      contentType: mimeType,
     });
 
+    const response = await axios.post(
+      `${process.env.TARGET_SERVER}/convert-to-pdf`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+        },
+        responseType: 'stream',
+      }
+    );
+
+    res.setHeader('Content-Disposition', 'attachment; filename="converted.pdf"');
     response.data.pipe(res);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Conversion failed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Proxy error' });
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Proxy server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Proxy server running on port ${port}`);
 });
