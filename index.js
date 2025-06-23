@@ -1,46 +1,36 @@
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-const FormData = require('form-data');
-const multer = require('multer');
-const upload = multer();
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
+import axios from 'axios';
+import FormData from 'form-data';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+const upload = multer();
 
 app.post('/convert-to-pdf', upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
 
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
     const formData = new FormData();
     formData.append('file', file.buffer, file.originalname);
 
-    const response = await axios.post(process.env.TARGET_URL + '/convert-to-pdf', formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
-      responseType: 'stream'
+    const response = await axios.post(`${process.env.RENDER_URL}/convert-to-pdf`, formData, {
+      headers: formData.getHeaders(),
+      responseType: 'stream',
     });
 
-    res.setHeader('Content-Disposition', response.headers['content-disposition']);
     response.data.pipe(res);
-    
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Proxy conversion failed' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Conversion failed' });
   }
 });
 
-// Simple test route
-app.get('/', (req, res) => {
-  res.send('Proxy Server is Running');
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Proxy server running on port ${PORT}`);
 });
-
-// For Vercel: listen on port provided by Vercel
-module.exports = app;
