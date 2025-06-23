@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const axios = require('axios');
+const FormData = require('form-data');
 require('dotenv').config();
 
 const app = express();
@@ -28,9 +29,7 @@ app.post('/convert-to-pdf', upload.single('file'), async (req, res) => {
       `${process.env.TARGET_SERVER}/convert-to-pdf`,
       formData,
       {
-        headers: {
-          ...formData.getHeaders(),
-        },
+        headers: formData.getHeaders(),
         responseType: 'stream',
       }
     );
